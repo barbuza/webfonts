@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+import shutil
+from optparse import OptionParser
+
+import webfonts_lib
+
+CSS_TMPL = """
+@font-face {
+    font-family: "%(font_family)s";
+    src: url("%(eot)s");
+    src: url("%(eot)s?#iefix") format("embedded-opentype"),
+         url("%(woff)s") format("woff"),
+         url("%(ttf)s") format("truetype"),
+         url("%(svg)s#webfont") format("svg");
+    font-weight: %(weight)s;
+    font-style: %(style)s;
+}
+"""
+
+if __name__ == "__main__":
+    parser = OptionParser(usage="usage: %prog [options] path_to_tff")
+    parser.add_option("-f", "--font-family", type="string",
+                      dest="font_family")
+    parser.add_option("-b", "--bold", dest="bold", default=False,
+                      action="store_true")
+    parser.add_option("-i", "--italic", dest="italic", default=False,
+                      action="store_true")
+    parser.add_option("-o", "--output-dir", dest="output_dir",
+                      default="fonts")
+    options, args = parser.parse_args()
+    if len(args) > 1 or not args:
+        parser.print_help()
+        sys.exit(1)
+    source = args[0]
+    if not os.path.isfile(source):
+        print "could not open %s" % source
+        sys.exit(1)
+    output_dir = os.path.abspath(options.output_dir)
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
+    basename, _ = os.path.splitext(os.path.basename(source))
+    font_family = options.font_family or basename
+    woff = "%s.woff" % basename
+    eot = "%s.eot" % basename
+    svg = "%s.svg" % basename
+    ttf = "%s.ttf" % basename
+    shutil.copy(source, os.path.join(output_dir, ttf))
+    webfonts_lib.woff.convert(source, os.path.join(output_dir, woff))
+    webfonts_lib.eot.convert(source, os.path.join(output_dir, eot))
+    webfonts_lib.svg.convert(source, os.path.join(output_dir, svg))
+    with open(os.path.join(output_dir, "%s.css" % basename), "w") as css:
+        css.write(CSS_TMPL % {
+            "woff": woff,
+            "eot": eot,
+            "ttf": ttf,
+            "svg": svg,
+            "font_family": font_family,
+            "weight": "bold" if options.bold else "normal",
+            "style": "italic" if options.italic else "normal",
+        })
+    

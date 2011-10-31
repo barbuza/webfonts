@@ -1,0 +1,4 @@
+include webfonts_lib/*.jar
+include webfonts_lib/lib/*.jar
+include webfonts_lib/eot/*.h
+include webfonts_lib/woff/*.h
